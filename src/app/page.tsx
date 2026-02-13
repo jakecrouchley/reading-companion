@@ -28,7 +28,7 @@ export default function DiscoverPage() {
   const hasFiveStarBooks = fiveStarBooks.length > 0;
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto">
       <header className="px-4 pt-6 pb-4">
         <h1 className="text-2xl font-bold text-gray-900">Discover</h1>
       </header>
