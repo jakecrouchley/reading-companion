@@ -35,9 +35,9 @@ export function SuggestionCarousel({
     return (
       <div className="mb-6">
         <h3 className="text-sm font-medium text-gray-600 px-4 mb-3">{title}</h3>
-        <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-hide">
+        <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x-mandatory">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex-shrink-0 w-40">
+            <div key={i} className="flex-shrink-0 w-40 snap-start">
               <div className="aspect-[2/3] bg-gray-200 rounded-lg animate-pulse mb-2" />
               <div className="h-4 bg-gray-200 rounded animate-pulse mb-1" />
               <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
@@ -55,9 +55,11 @@ export function SuggestionCarousel({
   return (
     <div className="mb-6">
       <h3 className="text-sm font-medium text-gray-600 px-4 mb-3">{title}</h3>
-      <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-hide">
+      <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x-mandatory">
         {books.map((book) => (
-          <BookCard key={book.id} book={book} />
+          <div key={book.id} className="snap-start">
+            <BookCard book={book} />
+          </div>
         ))}
       </div>
     </div>

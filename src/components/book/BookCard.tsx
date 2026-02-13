@@ -44,13 +44,13 @@ export function BookCard({ book, onClick }: BookCardProps) {
         <button
           onClick={handleSave}
           disabled={isSaved}
-          className={`absolute top-2 right-2 p-1.5 rounded-full transition-colors ${
+          className={`absolute top-1 right-1 p-2.5 rounded-full transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${
             isSaved
               ? 'bg-green-500 text-white'
-              : 'bg-white/90 text-gray-700 hover:bg-primary-500 hover:text-white'
+              : 'bg-white/90 text-gray-700 hover:bg-primary-500 hover:text-white active:bg-primary-600'
           }`}
         >
-          {isSaved ? <Check size={14} /> : <Bookmark size={14} />}
+          {isSaved ? <Check size={18} /> : <Bookmark size={18} />}
         </button>
       </div>
       <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">
