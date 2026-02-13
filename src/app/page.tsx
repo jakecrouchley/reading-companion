@@ -22,6 +22,7 @@ export default function DiscoverPage() {
     genreSuggestions,
     ratingSuggestions,
     isLoading,
+    isFetching,
     refetch,
   } = useSuggestions();
 
@@ -48,7 +49,7 @@ export default function DiscoverPage() {
         <SuggestionCarousel
           title="Based on authors you like"
           books={authorSuggestions}
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
           placeholder="Save some books so I can learn what to recommend!"
           hasData={hasSavedBooks}
           icon={PenTool}
@@ -58,7 +59,7 @@ export default function DiscoverPage() {
         <SuggestionCarousel
           title="Based on genres you've read"
           books={genreSuggestions}
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
           placeholder="Mark books as read to get genre-based recommendations!"
           hasData={hasReadBooks}
           icon={BookOpen}
@@ -68,7 +69,7 @@ export default function DiscoverPage() {
         <SuggestionCarousel
           title="Similar to your 5-star books"
           books={ratingSuggestions}
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
           placeholder="Rate some books 5 stars to get similar recommendations!"
           hasData={hasFiveStarBooks}
           icon={Star}
