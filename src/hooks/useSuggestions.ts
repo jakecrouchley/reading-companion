@@ -11,7 +11,6 @@ interface UseSuggestionsResult {
   genreSuggestions: Book[];
   ratingSuggestions: Book[];
   isLoading: boolean;
-  isFetching: boolean;
   error: Error | null;
   refetch: () => void;
 }
@@ -31,13 +30,12 @@ export function useSuggestions(): UseSuggestionsResult {
   const hasReadBooks = readBooks.length > 0;
   const hasFiveStarBooks = fiveStarBooks.length > 0;
 
-  const { data, isLoading, isFetching, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['suggestions', savedBooks.length, readBooks.length, fiveStarBooks.length],
     queryFn: () => generateSuggestions(savedBooks),
     enabled: hasSavedBooks || hasReadBooks || hasFiveStarBooks,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
-    placeholderData: (prev) => prev, // Keep previous suggestions visible while refetching
   });
 
   return {
@@ -45,7 +43,6 @@ export function useSuggestions(): UseSuggestionsResult {
     genreSuggestions: hasReadBooks ? (data?.byGenres || []) : [],
     ratingSuggestions: hasFiveStarBooks ? (data?.byRatings || []) : [],
     isLoading,
-    isFetching,
     error: error as Error | null,
     refetch,
   };
