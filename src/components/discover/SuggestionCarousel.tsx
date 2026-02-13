@@ -70,24 +70,7 @@ export function SuggestionCarousel({
   }
 
   if (books.length === 0) {
-    // Show loading skeleton while waiting for data (e.g., during refetch)
-    return (
-      <div className="mx-4 mb-4 bg-white rounded-xl border border-gray-200 p-4">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-center gap-2">
-          {Icon && <Icon size={16} className="text-primary-500" />}
-          {title}
-        </h3>
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x-mandatory -mx-1 px-1">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex-shrink-0 w-40 snap-start">
-              <div className="aspect-[2/3] bg-gray-200 rounded-lg animate-pulse mb-2" />
-              <div className="h-4 bg-gray-200 rounded animate-pulse mb-1" />
-              <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
