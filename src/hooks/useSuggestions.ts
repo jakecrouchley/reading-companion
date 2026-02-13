@@ -36,6 +36,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks || hasReadBooks || hasFiveStarBooks,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
+    placeholderData: (prev) => prev, // Keep previous suggestions visible while refetching
   });
 
   return {
