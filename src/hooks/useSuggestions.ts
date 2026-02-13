@@ -17,8 +17,8 @@ interface UseSuggestionsResult {
 
 export function useSuggestions(): UseSuggestionsResult {
   const savedBooks = useSavedBooksStore((s) => s.savedBooks);
-  const completedBooks = useMemo(
-    () => savedBooks.filter((book) => book.status === 'completed'),
+  const readBooks = useMemo(
+    () => savedBooks.filter((book) => book.status === 'read'),
     [savedBooks]
   );
   const fiveStarBooks = useMemo(
@@ -27,20 +27,20 @@ export function useSuggestions(): UseSuggestionsResult {
   );
 
   const hasSavedBooks = savedBooks.length > 0;
-  const hasCompletedBooks = completedBooks.length > 0;
+  const hasReadBooks = readBooks.length > 0;
   const hasFiveStarBooks = fiveStarBooks.length > 0;
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['suggestions', savedBooks.length, completedBooks.length, fiveStarBooks.length],
+    queryKey: ['suggestions', savedBooks.length, readBooks.length, fiveStarBooks.length],
     queryFn: () => generateSuggestions(savedBooks),
-    enabled: hasSavedBooks || hasCompletedBooks || hasFiveStarBooks,
+    enabled: hasSavedBooks || hasReadBooks || hasFiveStarBooks,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
   return {
     authorSuggestions: hasSavedBooks ? (data?.byAuthors || []) : [],
-    genreSuggestions: hasCompletedBooks ? (data?.byGenres || []) : [],
+    genreSuggestions: hasReadBooks ? (data?.byGenres || []) : [],
     ratingSuggestions: hasFiveStarBooks ? (data?.byRatings || []) : [],
     isLoading,
     error: error as Error | null,

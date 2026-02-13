@@ -17,8 +17,8 @@ function buildRecommendationPrompt(savedBooks: SavedBook[]): string {
     .map((sb) => `- "${sb.book.title}" by ${sb.book.authors?.join(', ') || 'Unknown'} (${sb.book.categories?.join(', ') || 'Unknown'})`)
     .join('\n');
 
-  const completedBooks = savedBooks.filter((sb) => sb.status === 'completed');
-  const completedList = completedBooks
+  const readBooks = savedBooks.filter((sb) => sb.status === 'read');
+  const readList = readBooks
     .map((sb) => `- "${sb.book.title}" by ${sb.book.authors?.join(', ') || 'Unknown'} - ${sb.userRating || 'unrated'} stars`)
     .join('\n');
 
@@ -30,7 +30,7 @@ function buildRecommendationPrompt(savedBooks: SavedBook[]): string {
   return `Suggest 3 books per category based on this reading history. Be concise.
 
 SAVED: ${savedList || 'None'}
-COMPLETED: ${completedList || 'None'}
+READ: ${readList || 'None'}
 5-STAR: ${fiveStarList || 'None'}
 
 Return JSON: {"byAuthors":[{"title":"...","author":"...","genre":"...","reason":"..."}],"byGenres":[...],"byRatings":[...]}`;

@@ -90,14 +90,14 @@ export function SavedBookCard({ savedBook }: SavedBookCardProps) {
                 Reading Status
               </label>
               <div className="flex gap-2">
-                {(['not_started', 'reading', 'completed'] as ReadingStatus[]).map((status) => (
+                {(['not_started', 'reading', 'read'] as ReadingStatus[]).map((status) => (
                   <Button
                     key={status}
                     variant={savedBook.status === status ? 'primary' : 'secondary'}
                     size="sm"
                     onClick={() => handleStatusChange(status)}
                   >
-                    {status === 'not_started' ? 'Not Started' : status === 'reading' ? 'Reading' : 'Completed'}
+                    {status === 'not_started' ? 'Not Started' : status === 'reading' ? 'Reading' : 'Read'}
                   </Button>
                 ))}
               </div>

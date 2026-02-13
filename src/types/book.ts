@@ -12,7 +12,7 @@ export interface Book {
   isbn?: string;
 }
 
-export type ReadingStatus = 'not_started' | 'reading' | 'completed';
+export type ReadingStatus = 'not_started' | 'reading' | 'read';
 
 export interface SavedBook {
   id: string;
@@ -23,7 +23,7 @@ export interface SavedBook {
   savedAt: Date;
   updatedAt: Date;
   startedAt?: Date;
-  completedAt?: Date;
+  readAt?: Date;
   userRating?: number;
 }
 

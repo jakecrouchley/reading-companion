@@ -50,17 +50,55 @@ export async function searchBooks(query: string): Promise<Book[]> {
   if (!query.trim()) return [];
 
   try {
-    const response = await axios.get(GOOGLE_BOOKS_API, {
-      params: {
-        q: query,
-        key: API_KEY,
-        maxResults: 20,
-      },
-    });
+    // Search both title and author in parallel for better results
+    const [titleResults, authorResults] = await Promise.all([
+      axios.get(GOOGLE_BOOKS_API, {
+        params: {
+          q: `intitle:${query}`,
+          key: API_KEY,
+          maxResults: 15,
+        },
+      }),
+      axios.get(GOOGLE_BOOKS_API, {
+        params: {
+          q: `inauthor:${query}`,
+          key: API_KEY,
+          maxResults: 15,
+        },
+      }),
+    ]);
 
-    if (!response.data.items) return [];
+    const titleBooks: Book[] = (titleResults.data.items || []).map(transformGoogleBook);
+    const authorBooks: Book[] = (authorResults.data.items || []).map(transformGoogleBook);
 
-    return response.data.items.map(transformGoogleBook);
+    // Merge results, prioritizing author matches when query looks like an author name
+    // (single word or 2-3 words without common title words)
+    const queryWords = query.trim().split(/\s+/);
+    const isLikelyAuthorSearch = queryWords.length <= 3 &&
+      !query.toLowerCase().match(/\b(the|a|an|of|and|in|on|at|to|for)\b/);
+
+    const seen = new Set<string>();
+    const merged: Book[] = [];
+
+    // Add books in order of priority
+    const primaryResults = isLikelyAuthorSearch ? authorBooks : titleBooks;
+    const secondaryResults = isLikelyAuthorSearch ? titleBooks : authorBooks;
+
+    for (const book of primaryResults) {
+      if (!seen.has(book.id)) {
+        seen.add(book.id);
+        merged.push(book);
+      }
+    }
+
+    for (const book of secondaryResults) {
+      if (!seen.has(book.id)) {
+        seen.add(book.id);
+        merged.push(book);
+      }
+    }
+
+    return merged.slice(0, 20);
   } catch (error) {
     console.error('Google Books API error:', error);
     return [];

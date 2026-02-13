@@ -9,7 +9,7 @@ const filterOptions: { value: FilterOption; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'not_started', label: 'Not Started' },
   { value: 'reading', label: 'Reading' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'read', label: 'Read' },
 ];
 
 export function FilterBar() {

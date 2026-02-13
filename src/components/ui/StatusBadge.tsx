@@ -13,8 +13,8 @@ const statusConfig: Record<ReadingStatus, { label: string; className: string }> 
     label: 'Reading',
     className: 'bg-blue-100 text-blue-700',
   },
-  completed: {
-    label: 'Completed',
+  read: {
+    label: 'Read',
     className: 'bg-green-100 text-green-700',
   },
 };

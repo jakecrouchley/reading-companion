@@ -99,17 +99,18 @@ export function BookDetailCard({ book, onClose }: BookDetailCardProps) {
         />
       )}
 
-      <div className="mt-4">
-        <Button
-          onClick={handleSave}
-          disabled={isSaved}
-          variant={isSaved ? 'ghost' : 'primary'}
-          className="w-full"
-          icon={isSaved ? <Check size={18} className="text-green-500" /> : <Bookmark size={18} />}
-        >
-          {isSaved ? 'Saved' : 'Save to Reading List'}
-        </Button>
-      </div>
+      {!isSaved && (
+        <div className="mt-4">
+          <Button
+            onClick={handleSave}
+            variant="primary"
+            className="w-full"
+            icon={<Bookmark size={18} />}
+          >
+            Save to Reading List
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

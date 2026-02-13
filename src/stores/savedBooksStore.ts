@@ -12,7 +12,7 @@ interface SavedBooksState {
   isBookSaved: (bookId: string) => boolean;
   getSavedBookIds: () => string[];
   getBooksByStatus: (status: ReadingStatus) => SavedBook[];
-  getCompletedBooks: () => SavedBook[];
+  getReadBooks: () => SavedBook[];
   getFiveStarBooks: () => SavedBook[];
 }
 
@@ -55,9 +55,9 @@ export const useSavedBooksStore = create<SavedBooksState>()(
               updatedBook.startedAt = new Date();
             }
 
-            // Set completedAt when status changes to 'completed'
-            if (updates.status === 'completed' && !book.completedAt) {
-              updatedBook.completedAt = new Date();
+            // Set readAt when status changes to 'read'
+            if (updates.status === 'read' && !book.readAt) {
+              updatedBook.readAt = new Date();
             }
 
             return updatedBook;
@@ -87,8 +87,8 @@ export const useSavedBooksStore = create<SavedBooksState>()(
         return get().savedBooks.filter((book) => book.status === status);
       },
 
-      getCompletedBooks: () => {
-        return get().savedBooks.filter((book) => book.status === 'completed');
+      getReadBooks: () => {
+        return get().savedBooks.filter((book) => book.status === 'read');
       },
 
       getFiveStarBooks: () => {
