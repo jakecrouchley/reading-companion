@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useBookSearch } from '@/hooks';
+import { useUserStore } from '@/stores';
 import { BookListItem, BookDetailCard } from '@/components/book';
 
 export default function SearchResultsPage() {
@@ -11,6 +12,7 @@ export default function SearchResultsPage() {
   const router = useRouter();
   const query = decodeURIComponent(params.query as string);
   const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
+  const setLastSearchQuery = useUserStore((s) => s.setLastSearchQuery);
 
   const { data: books, isLoading, error } = useBookSearch(query);
 
@@ -18,11 +20,16 @@ export default function SearchResultsPage() {
     setExpandedBookId(expandedBookId === bookId ? null : bookId);
   };
 
+  const handleBack = () => {
+    setLastSearchQuery(null);
+    router.push('/');
+  };
+
   return (
     <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto">
       <header className="px-4 pt-6 pb-4 flex items-center gap-4">
         <button
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="p-2.5 -ml-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
         >
           <ArrowLeft size={24} className="text-gray-700" />

@@ -16,7 +16,7 @@ export function Badge({ label, size = 'md', variant = 'default' }: BadgeProps) {
   };
 
   return (
-    <span className={`inline-block rounded-full font-medium ${sizeStyles[size]} ${variantStyles[variant]}`}>
+    <span className={`inline-flex items-center justify-center text-center rounded-full font-medium ${sizeStyles[size]} ${variantStyles[variant]}`}>
       {label}
     </span>
   );

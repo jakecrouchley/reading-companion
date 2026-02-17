@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { RefreshCw, Sparkles } from 'lucide-react';
 import { BookCard, BookDetailCard } from '@/components/book';
 import type { Book } from '@/types';
 import type { LucideIcon } from 'lucide-react';
@@ -10,6 +10,7 @@ interface SuggestionCarouselProps {
   title: string;
   books: Book[];
   isLoading: boolean;
+  isLoadingMore?: boolean;
   placeholder: string;
   hasData: boolean;
   icon?: LucideIcon;
@@ -20,16 +21,24 @@ export function SuggestionCarousel({
   title,
   books,
   isLoading,
+  isLoadingMore = false,
   placeholder,
   hasData,
   icon: Icon,
   onRefresh,
 }: SuggestionCarouselProps) {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
 
   const handleBookClick = (book: Book) => {
     setSelectedBook(selectedBook?.id === book.id ? null : book);
   };
+
+  useEffect(() => {
+    if (selectedBook && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [selectedBook]);
 
   const handleClose = () => {
     setSelectedBook(null);
@@ -49,28 +58,23 @@ export function SuggestionCarousel({
     );
   }
 
-  if (isLoading) {
+  // Show full loading skeleton only on initial load (no books yet)
+  // During refresh, keep showing existing books with a loading indicator
+  const isInitialLoading = isLoading && books.length === 0;
+
+  if (isInitialLoading) {
     return (
       <div className="mx-4 mb-4 bg-white rounded-xl border border-gray-200 p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-center gap-2">
           {Icon && <Icon size={16} className="text-primary-500" />}
           {title}
         </h3>
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x-mandatory -mx-1 px-1">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex-shrink-0 w-40 snap-start">
-              <div className="aspect-[2/3] bg-gray-200 rounded-lg animate-pulse mb-2" />
-              <div className="h-4 bg-gray-200 rounded animate-pulse mb-1" />
-              <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
-            </div>
-          ))}
+        <div className="flex flex-col items-center justify-center py-8 gap-3">
+          <Sparkles size={32} className="text-primary-500 animate-pulse" />
+          <p className="text-sm text-gray-500 animate-pulse">Finding recommendations...</p>
         </div>
       </div>
     );
-  }
-
-  if (books.length === 0) {
-    return null;
   }
 
   return (
@@ -87,11 +91,11 @@ export function SuggestionCarousel({
             className="text-xs text-gray-500 hover:text-primary-500 flex items-center gap-1 transition-colors disabled:opacity-50"
           >
             <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
-            Refresh
+            {isLoading ? 'Refreshing...' : 'Refresh'}
           </button>
         )}
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x-mandatory -mx-1 px-1">
+      <div className={`flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x-mandatory -mx-1 px-1 ${isLoading ? 'opacity-50' : ''}`}>
         {books.map((book) => (
           <div key={book.id} className="snap-start">
             <BookCard
@@ -102,10 +106,22 @@ export function SuggestionCarousel({
             />
           </div>
         ))}
+        {isLoadingMore && (
+          <div className="flex-shrink-0 w-[120px] sm:w-40 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2 text-gray-400">
+              <Sparkles size={24} className="animate-pulse text-primary-400" />
+              <span className="text-xs text-center">Loading more...</span>
+            </div>
+          </div>
+        )}
       </div>
       {selectedBook && (
-        <div className="mt-4 -mx-4 -mb-4">
-          <BookDetailCard book={selectedBook} onClose={handleClose} />
+        <div ref={detailRef} className="mt-4 -mx-4 -mb-4">
+          <BookDetailCard
+            book={selectedBook}
+            onClose={handleClose}
+            notesPlaceholder="Add a note (e.g., 'Sounds interesting - read next?')"
+          />
         </div>
       )}
     </div>

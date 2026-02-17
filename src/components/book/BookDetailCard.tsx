@@ -10,9 +10,10 @@ import type { Book } from '@/types';
 interface BookDetailCardProps {
   book: Book;
   onClose?: () => void;
+  notesPlaceholder?: string;
 }
 
-export function BookDetailCard({ book, onClose }: BookDetailCardProps) {
+export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCardProps) {
   const [notes, setNotes] = useState('');
   const [showFullDescription, setShowFullDescription] = useState(false);
 
@@ -61,11 +62,23 @@ export function BookDetailCard({ book, onClose }: BookDetailCardProps) {
               <Badge key={genre} label={genre} size="sm" />
             ))}
           </div>
-          {book.averageRating && (
-            <div className="mt-2">
-              <StarRating rating={book.averageRating} size={16} showValue />
-            </div>
-          )}
+          <div className="mt-2">
+            {book.averageRating ? (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <StarRating rating={book.averageRating} size={14} showValue />
+                  {book.ratingsCount && (
+                    <span className="text-xs text-gray-400">
+                      ({book.ratingsCount.toLocaleString()})
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] text-gray-400 mt-0.5">Google Books rating</p>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400">No Google rating available</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -91,7 +104,7 @@ export function BookDetailCard({ book, onClose }: BookDetailCardProps) {
 
       {!isSaved && (
         <textarea
-          placeholder="Add a note (e.g., 'Anna recommended this at dinner')"
+          placeholder={notesPlaceholder || "Add a note (e.g., 'Anna recommended this at dinner')"}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           className="w-full mt-4 p-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"

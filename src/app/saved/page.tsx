@@ -1,24 +1,46 @@
 'use client';
 
-import { useMemo } from 'react';
-import { BookOpen } from 'lucide-react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
+import Link from 'next/link';
+import { BookOpen, Settings } from 'lucide-react';
 import { useSavedBooksStore, useUserStore } from '@/stores';
 import { SavedBookCard } from '@/components/book';
 import { FilterBar, SortDropdown } from '@/components/saved';
 import type { SavedBook } from '@/types';
 
 export default function SavedPage() {
+  const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
   const savedBooks = useSavedBooksStore((s) => s.savedBooks);
   const filterPreference = useUserStore((s) => s.filterPreference);
   const sortPreference = useUserStore((s) => s.sortPreference);
   const sortDirection = useUserStore((s) => s.sortDirection);
 
+  const handleToggleExpand = useCallback((bookId: string) => {
+    setExpandedBookId((current) => (current === bookId ? null : bookId));
+  }, []);
+
+  useEffect(() => {
+    if (!expandedBookId) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      const clickedCard = target.closest('[data-book-card]');
+      if (!clickedCard) {
+        setExpandedBookId(null);
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [expandedBookId]);
+
   const filteredAndSortedBooks = useMemo(() => {
-    let books = [...savedBooks];
+    // Create array with original indices to use as tiebreaker for date sorting
+    let books = savedBooks.map((book, index) => ({ book, originalIndex: index }));
 
     // Filter
     if (filterPreference !== 'all') {
-      books = books.filter((book) => book.status === filterPreference);
+      books = books.filter((item) => item.book.status === filterPreference);
     }
 
     // Sort
@@ -27,31 +49,35 @@ export default function SavedPage() {
 
       switch (sortPreference) {
         case 'date_saved':
-          comparison = new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime();
-          break;
-        case 'title':
-          comparison = a.book.title.localeCompare(b.book.title);
-          break;
-        case 'author':
-          const authorA = a.book.authors?.[0] || '';
-          const authorB = b.book.authors?.[0] || '';
-          comparison = authorA.localeCompare(authorB);
+          // Primary: compare timestamps
+          comparison = new Date(b.book.savedAt).getTime() - new Date(a.book.savedAt).getTime();
+          // Tiebreaker: use original array order (newer books are prepended, so lower index = newer)
+          if (comparison === 0) {
+            comparison = a.originalIndex - b.originalIndex;
+          }
           break;
         case 'rating':
-          comparison = (b.userRating || 0) - (a.userRating || 0);
+          comparison = (b.book.userRating || 0) - (a.book.userRating || 0);
           break;
       }
 
       return sortDirection === 'asc' ? -comparison : comparison;
     });
 
-    return books;
+    return books.map((item) => item.book);
   }, [savedBooks, filterPreference, sortPreference, sortDirection]);
 
   return (
     <div className="max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto">
-      <header className="px-4 pt-6 pb-4 text-center">
+      <header className="px-4 pt-6 pb-4 flex items-center justify-between">
+        <div className="w-10" />
         <h1 className="text-2xl font-bold text-gray-900">Saved</h1>
+        <Link
+          href="/settings"
+          className="p-2 -mr-2 min-w-[40px] min-h-[40px] flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors"
+        >
+          <Settings size={24} className="text-gray-600" />
+        </Link>
       </header>
 
       {savedBooks.length === 0 ? (
@@ -66,7 +92,7 @@ export default function SavedPage() {
         </div>
       ) : (
         <>
-          <div className="px-4 pb-4 flex items-center justify-between gap-4">
+          <div className="px-4 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <FilterBar />
             <SortDropdown />
           </div>
@@ -78,7 +104,12 @@ export default function SavedPage() {
               </div>
             ) : (
               filteredAndSortedBooks.map((book) => (
-                <SavedBookCard key={book.id} savedBook={book} />
+                <SavedBookCard
+                  key={book.id}
+                  savedBook={book}
+                  isExpanded={expandedBookId === book.id}
+                  onToggle={() => handleToggleExpand(book.id)}
+                />
               ))
             )}
           </div>

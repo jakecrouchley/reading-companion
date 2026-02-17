@@ -16,6 +16,7 @@ interface GoogleBookVolume {
       smallThumbnail?: string;
     };
     averageRating?: number;
+    ratingsCount?: number;
     publishedDate?: string;
     pageCount?: number;
     industryIdentifiers?: Array<{
@@ -40,6 +41,7 @@ function transformGoogleBook(volume: GoogleBookVolume): Book {
     description: volumeInfo.description,
     thumbnail: volumeInfo.imageLinks?.thumbnail?.replace('http://', 'https://'),
     averageRating: volumeInfo.averageRating,
+    ratingsCount: volumeInfo.ratingsCount,
     publishedDate: volumeInfo.publishedDate,
     pageCount: volumeInfo.pageCount,
     isbn,
@@ -97,6 +99,13 @@ export async function searchBooks(query: string): Promise<Book[]> {
         merged.push(book);
       }
     }
+
+    // Sort to prioritize books with covers and ratings
+    merged.sort((a, b) => {
+      const aScore = (a.thumbnail ? 2 : 0) + (a.averageRating ? 1 : 0);
+      const bScore = (b.thumbnail ? 2 : 0) + (b.averageRating ? 1 : 0);
+      return bScore - aScore;
+    });
 
     return merged.slice(0, 20);
   } catch (error) {

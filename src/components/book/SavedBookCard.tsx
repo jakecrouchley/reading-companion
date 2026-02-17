@@ -10,15 +10,24 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface SavedBookCardProps {
   savedBook: SavedBook;
+  isExpanded: boolean;
+  onToggle: () => void;
 }
 
-export function SavedBookCard({ savedBook }: SavedBookCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function SavedBookCard({ savedBook, isExpanded, onToggle }: SavedBookCardProps) {
+  const [notes, setNotes] = useState(savedBook.notes || '');
   const updateBook = useSavedBooksStore((s) => s.updateBook);
   const deleteBook = useSavedBooksStore((s) => s.deleteBook);
 
   const handleStatusChange = (status: ReadingStatus) => {
     updateBook(savedBook.id, { status });
+  };
+
+  const handleNotesBlur = () => {
+    const trimmedNotes = notes.trim();
+    if (trimmedNotes !== (savedBook.notes || '')) {
+      updateBook(savedBook.id, { notes: trimmedNotes || undefined });
+    }
   };
 
   const handleRatingChange = (rating: number) => {
@@ -36,10 +45,10 @@ export function SavedBookCard({ savedBook }: SavedBookCardProps) {
   const savedDate = new Date(savedBook.savedAt);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+    <div data-book-card className="bg-white rounded-xl border border-gray-100 overflow-hidden">
       <div
         className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={onToggle}
       >
         <div className="flex gap-3">
           <div className="relative w-16 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
@@ -115,14 +124,20 @@ export function SavedBookCard({ savedBook }: SavedBookCardProps) {
               />
             </div>
 
-            {savedBook.notes && (
-              <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1">
-                  Notes
-                </label>
-                <p className="text-sm text-gray-600">{savedBook.notes}</p>
-              </div>
-            )}
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-2">
+                Notes
+              </label>
+              <textarea
+                placeholder="Add a note (e.g., 'Anna recommended this at dinner')"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                onBlur={handleNotesBlur}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full p-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none text-sm"
+                rows={2}
+              />
+            </div>
 
             <div className="flex items-center justify-between pt-2">
               <p className="text-xs text-gray-400">

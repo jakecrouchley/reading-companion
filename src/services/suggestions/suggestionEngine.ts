@@ -6,9 +6,10 @@ interface Suggestions {
   byAuthors: Book[];
   byGenres: Book[];
   byRatings: Book[];
+  bySomethingNew: Book[];
 }
 
-async function fetchBookDetails(recommendations: AIRecommendation[]): Promise<Book[]> {
+export async function fetchBookDetails(recommendations: AIRecommendation[]): Promise<Book[]> {
   const bookPromises = recommendations.map(async (rec) => {
     try {
       const book = await getBookByTitle(rec.title, rec.author);
@@ -45,15 +46,17 @@ export async function generateSuggestions(savedBooks: SavedBook[]): Promise<Sugg
     recs.filter((rec) => !savedBookTitles.has(rec.title.toLowerCase()));
 
   // Fetch book details from Google Books API
-  const [byAuthors, byGenres, byRatings] = await Promise.all([
+  const [byAuthors, byGenres, byRatings, bySomethingNew] = await Promise.all([
     fetchBookDetails(filterSaved(aiRecommendations.byAuthors).slice(0, 5)),
     fetchBookDetails(filterSaved(aiRecommendations.byGenres).slice(0, 5)),
     fetchBookDetails(filterSaved(aiRecommendations.byRatings).slice(0, 5)),
+    fetchBookDetails(filterSaved(aiRecommendations.bySomethingNew).slice(0, 5)),
   ]);
 
   return {
     byAuthors,
     byGenres,
     byRatings,
+    bySomethingNew,
   };
 }

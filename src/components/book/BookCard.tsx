@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 import { useSavedBooksStore } from '@/stores';
-import { Button, Badge, StarRating } from '@/components/ui';
-import { Bookmark, Check } from 'lucide-react';
+import { Badge } from '@/components/ui';
+import { Bookmark, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Book } from '@/types';
 
 interface BookCardProps {
@@ -26,7 +26,7 @@ export function BookCard({ book, onClick, isSelected, showSaveButton = true }: B
 
   return (
     <div
-      className="flex-shrink-0 w-40 cursor-pointer group"
+      className="flex-shrink-0 w-[120px] sm:w-40 cursor-pointer group"
       onClick={onClick}
     >
       <div className={`relative aspect-[2/3] mb-2 rounded-lg overflow-hidden bg-gray-100 ${isSelected ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
@@ -36,7 +36,7 @@ export function BookCard({ book, onClick, isSelected, showSaveButton = true }: B
             alt={book.title}
             fill
             className="object-cover group-hover:scale-105 transition-transform"
-            sizes="160px"
+            sizes="(max-width: 640px) 120px, 160px"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-2">
@@ -63,10 +63,14 @@ export function BookCard({ book, onClick, isSelected, showSaveButton = true }: B
       <p className="text-xs text-gray-500 line-clamp-1 mb-1 text-center">
         {book.authors?.join(', ') || 'Unknown Author'}
       </p>
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center">
         <Badge label={mainGenre} size="sm" />
-        {book.averageRating && (
-          <StarRating rating={book.averageRating} size={10} />
+      </div>
+      <div className="flex items-center justify-center mt-1">
+        {isSelected ? (
+          <ChevronUp size={16} className="text-primary-500" />
+        ) : (
+          <ChevronDown size={16} className="text-gray-400" />
         )}
       </div>
     </div>

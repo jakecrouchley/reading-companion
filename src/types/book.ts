@@ -7,6 +7,7 @@ export interface Book {
   description?: string;
   thumbnail?: string;
   averageRating?: number;
+  ratingsCount?: number;
   publishedDate?: string;
   pageCount?: number;
   isbn?: string;

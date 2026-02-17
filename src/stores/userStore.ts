@@ -8,6 +8,7 @@ interface UserState extends UserPreferences {
   setSortPreference: (sort: SortOption) => void;
   setSortDirection: (direction: SortDirection) => void;
   setFilterPreference: (filter: ReadingStatus | 'all') => void;
+  setLastSearchQuery: (query: string | null) => void;
   reset: () => void;
 }
 
@@ -16,6 +17,7 @@ const initialState: UserPreferences = {
   sortPreference: 'date_saved',
   sortDirection: 'desc',
   filterPreference: 'all',
+  lastSearchQuery: null,
 };
 
 export const useUserStore = create<UserState>()(
@@ -37,6 +39,10 @@ export const useUserStore = create<UserState>()(
 
       setFilterPreference: (filterPreference) => {
         set({ filterPreference });
+      },
+
+      setLastSearchQuery: (lastSearchQuery) => {
+        set({ lastSearchQuery });
       },
 
       reset: () => {
