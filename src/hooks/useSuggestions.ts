@@ -242,25 +242,25 @@ export function useSuggestions(): UseSuggestionsResult {
   return {
     authorSuggestions: {
       books: hasSavedBooks ? authorBooks : [],
-      isLoading: isFetchingAI || (hasSavedBooks && authorQuery.isFetching),
+      isLoading: isFetchingAI || (hasSavedBooks && (authorQuery.isFetching || authorQuery.status === 'pending')),
       isLoadingMore: hasSavedBooks && authorMoreQuery.isFetching,
       refetch: refetchAuthors,
     },
     genreSuggestions: {
       books: hasReadBooks ? genreBooks : [],
-      isLoading: isFetchingAI || (hasReadBooks && genreQuery.isFetching),
+      isLoading: isFetchingAI || (hasReadBooks && (genreQuery.isFetching || genreQuery.status === 'pending')),
       isLoadingMore: hasReadBooks && genreMoreQuery.isFetching,
       refetch: refetchGenres,
     },
     ratingSuggestions: {
       books: hasFiveStarBooks ? ratingBooks : [],
-      isLoading: isFetchingAI || (hasFiveStarBooks && ratingQuery.isFetching),
+      isLoading: isFetchingAI || (hasFiveStarBooks && (ratingQuery.isFetching || ratingQuery.status === 'pending')),
       isLoadingMore: hasFiveStarBooks && ratingMoreQuery.isFetching,
       refetch: refetchRatings,
     },
     somethingNewSuggestions: {
       books: hasSavedBooks ? somethingNewBooks : [],
-      isLoading: isFetchingAI || (hasSavedBooks && somethingNewQuery.isFetching),
+      isLoading: isFetchingAI || (hasSavedBooks && (somethingNewQuery.isFetching || somethingNewQuery.status === 'pending')),
       isLoadingMore: hasSavedBooks && somethingNewMoreQuery.isFetching,
       refetch: refetchSomethingNew,
     },
