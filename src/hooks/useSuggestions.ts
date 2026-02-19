@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useCallback, useState, useEffect } from 'react';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSavedBooksStore } from '@/stores';
 import { getAIRecommendations, getSingleCategoryRecommendations } from '@/services/api/openai';
 import { fetchBookDetails } from '@/services/suggestions/suggestionEngine';
@@ -71,7 +71,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks || hasReadBooks || hasFiveStarBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   // Individual category queries - can be refreshed independently (initial 3 books)
@@ -89,7 +88,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   const genreQuery = useQuery({
@@ -104,7 +102,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasReadBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   const ratingQuery = useQuery({
@@ -119,7 +116,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasFiveStarBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   const somethingNewQuery = useQuery({
@@ -134,7 +130,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   // Secondary queries to load 3 more books per category after initial load
@@ -149,7 +144,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks && !!authorQuery.data?.length && !authorQuery.isFetching,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   const genreMoreQuery = useQuery({
@@ -162,7 +156,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasReadBooks && !!genreQuery.data?.length && !genreQuery.isFetching,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   const ratingMoreQuery = useQuery({
@@ -175,7 +168,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasFiveStarBooks && !!ratingQuery.data?.length && !ratingQuery.isFetching,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   const somethingNewMoreQuery = useQuery({
@@ -188,7 +180,6 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks && !!somethingNewQuery.data?.length && !somethingNewQuery.isFetching,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: keepPreviousData,
   });
 
   // Individual category refresh - increments counter to trigger new API call
@@ -270,25 +261,26 @@ export function useSuggestions(): UseSuggestionsResult {
   return {
     authorSuggestions: {
       books: hasSavedBooks ? authorBooks : [],
-      isLoading: hasSavedBooks && (authorQuery.isFetching || !authorQuery.isSuccess),
+      // isPending = no data yet (status === 'pending'). More reliable than isFetching || !isSuccess
+      isLoading: hasSavedBooks && authorQuery.isPending,
       isLoadingMore: hasSavedBooks && authorMoreQuery.isFetching,
       refetch: refetchAuthors,
     },
     genreSuggestions: {
       books: hasReadBooks ? genreBooks : [],
-      isLoading: hasReadBooks && (genreQuery.isFetching || !genreQuery.isSuccess),
+      isLoading: hasReadBooks && genreQuery.isPending,
       isLoadingMore: hasReadBooks && genreMoreQuery.isFetching,
       refetch: refetchGenres,
     },
     ratingSuggestions: {
       books: hasFiveStarBooks ? ratingBooks : [],
-      isLoading: hasFiveStarBooks && (ratingQuery.isFetching || !ratingQuery.isSuccess),
+      isLoading: hasFiveStarBooks && ratingQuery.isPending,
       isLoadingMore: hasFiveStarBooks && ratingMoreQuery.isFetching,
       refetch: refetchRatings,
     },
     somethingNewSuggestions: {
       books: hasSavedBooks ? somethingNewBooks : [],
-      isLoading: hasSavedBooks && (somethingNewQuery.isFetching || !somethingNewQuery.isSuccess),
+      isLoading: hasSavedBooks && somethingNewQuery.isPending,
       isLoadingMore: hasSavedBooks && somethingNewMoreQuery.isFetching,
       refetch: refetchSomethingNew,
     },
