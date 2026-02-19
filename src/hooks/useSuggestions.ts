@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useCallback, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useSavedBooksStore } from '@/stores';
 import { getAIRecommendations, getSingleCategoryRecommendations } from '@/services/api/openai';
 import { fetchBookDetails } from '@/services/suggestions/suggestionEngine';
@@ -71,7 +71,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks || hasReadBooks || hasFiveStarBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   // Individual category queries - can be refreshed independently (initial 3 books)
@@ -89,7 +89,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks && (refreshCounters.authors > 0 || !!aiRecommendations?.byAuthors?.length),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const genreQuery = useQuery({
@@ -104,7 +104,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasReadBooks && (refreshCounters.genres > 0 || !!aiRecommendations?.byGenres?.length),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const ratingQuery = useQuery({
@@ -119,7 +119,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasFiveStarBooks && (refreshCounters.ratings > 0 || !!aiRecommendations?.byRatings?.length),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const somethingNewQuery = useQuery({
@@ -134,7 +134,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks && (refreshCounters.somethingNew > 0 || !!aiRecommendations?.bySomethingNew?.length),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   // Secondary queries to load 3 more books per category after initial load
@@ -149,7 +149,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks && !!authorQuery.data?.length && !authorQuery.isFetching,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const genreMoreQuery = useQuery({
@@ -162,7 +162,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasReadBooks && !!genreQuery.data?.length && !genreQuery.isFetching,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const ratingMoreQuery = useQuery({
@@ -175,7 +175,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasFiveStarBooks && !!ratingQuery.data?.length && !ratingQuery.isFetching,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   const somethingNewMoreQuery = useQuery({
@@ -188,7 +188,7 @@ export function useSuggestions(): UseSuggestionsResult {
     enabled: hasSavedBooks && !!somethingNewQuery.data?.length && !somethingNewQuery.isFetching,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    placeholderData: (prev) => prev,
+    placeholderData: keepPreviousData,
   });
 
   // Individual category refresh - increments counter to trigger new API call
