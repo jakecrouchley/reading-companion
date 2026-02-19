@@ -6,9 +6,6 @@ import { BookCard, BookDetailCard } from '@/components/book';
 import type { Book } from '@/types';
 import type { LucideIcon } from 'lucide-react';
 
-// Module-level cache that persists across component unmounts
-const booksCache = new Map<string, Book[]>();
-
 interface SuggestionCarouselProps {
   title: string;
   books: Book[];
@@ -31,14 +28,18 @@ export function SuggestionCarousel({
   onRefresh,
 }: SuggestionCarouselProps) {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [cachedBooks, setCachedBooks] = useState<Book[]>([]);
   const detailRef = useRef<HTMLDivElement>(null);
 
-  // Cache last displayed books using module-level Map (persists across unmounts)
-  if (books.length > 0) {
-    booksCache.set(title, books);
-  }
+  // Cache books when we receive them (prevents empty flashes during refetch)
+  useEffect(() => {
+    if (books.length > 0) {
+      setCachedBooks(books);
+    }
+  }, [books]);
+
   // Use incoming books if available, otherwise use cached
-  const displayBooks = books.length > 0 ? books : (booksCache.get(title) || []);
+  const displayBooks = books.length > 0 ? books : cachedBooks;
 
   const handleBookClick = (book: Book) => {
     setSelectedBook(selectedBook?.id === book.id ? null : book);
