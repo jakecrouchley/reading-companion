@@ -69,12 +69,7 @@ export function SuggestionCarousel({
     );
   }
 
-  // Show loading skeleton when:
-  // 1. We're explicitly loading, OR
-  // 2. We have data prerequisites but no books to display (defensive check)
-  const shouldShowLoading = isLoading || displayBooks.length === 0;
-
-  if (shouldShowLoading) {
+  if (isLoading) {
     return (
       <div className="mx-4 mb-4 bg-white rounded-xl border border-gray-200 p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-center gap-2">
