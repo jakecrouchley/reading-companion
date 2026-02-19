@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback, useState, useRef } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useSavedBooksStore } from '@/stores';
 import { getAIRecommendations, getSingleCategoryRecommendations } from '@/services/api/openai';
@@ -215,43 +215,57 @@ export function useSuggestions(): UseSuggestionsResult {
   }, [queryClient]);
 
   // Combine initial and more books for each category
-  // Use refs to cache last successful data - prevents empty flashes during transitions
-  const cachedAuthorBooks = useRef<Book[]>([]);
-  const cachedGenreBooks = useRef<Book[]>([]);
-  const cachedRatingBooks = useRef<Book[]>([]);
-  const cachedSomethingNewBooks = useRef<Book[]>([]);
-
-  const authorBooks = useMemo(() => {
+  const authorBooksRaw = useMemo(() => {
     const initial = authorQuery.data || [];
     const more = authorMoreQuery.data || [];
-    const books = [...initial, ...more];
-    if (books.length > 0) cachedAuthorBooks.current = books;
-    return books.length > 0 ? books : cachedAuthorBooks.current;
+    return [...initial, ...more];
   }, [authorQuery.data, authorMoreQuery.data]);
 
-  const genreBooks = useMemo(() => {
+  const genreBooksRaw = useMemo(() => {
     const initial = genreQuery.data || [];
     const more = genreMoreQuery.data || [];
-    const books = [...initial, ...more];
-    if (books.length > 0) cachedGenreBooks.current = books;
-    return books.length > 0 ? books : cachedGenreBooks.current;
+    return [...initial, ...more];
   }, [genreQuery.data, genreMoreQuery.data]);
 
-  const ratingBooks = useMemo(() => {
+  const ratingBooksRaw = useMemo(() => {
     const initial = ratingQuery.data || [];
     const more = ratingMoreQuery.data || [];
-    const books = [...initial, ...more];
-    if (books.length > 0) cachedRatingBooks.current = books;
-    return books.length > 0 ? books : cachedRatingBooks.current;
+    return [...initial, ...more];
   }, [ratingQuery.data, ratingMoreQuery.data]);
 
-  const somethingNewBooks = useMemo(() => {
+  const somethingNewBooksRaw = useMemo(() => {
     const initial = somethingNewQuery.data || [];
     const more = somethingNewMoreQuery.data || [];
-    const books = [...initial, ...more];
-    if (books.length > 0) cachedSomethingNewBooks.current = books;
-    return books.length > 0 ? books : cachedSomethingNewBooks.current;
+    return [...initial, ...more];
   }, [somethingNewQuery.data, somethingNewMoreQuery.data]);
+
+  // Cache last successful data in state - prevents empty flashes during transitions
+  const [cachedAuthorBooks, setCachedAuthorBooks] = useState<Book[]>([]);
+  const [cachedGenreBooks, setCachedGenreBooks] = useState<Book[]>([]);
+  const [cachedRatingBooks, setCachedRatingBooks] = useState<Book[]>([]);
+  const [cachedSomethingNewBooks, setCachedSomethingNewBooks] = useState<Book[]>([]);
+
+  useEffect(() => {
+    if (authorBooksRaw.length > 0) setCachedAuthorBooks(authorBooksRaw);
+  }, [authorBooksRaw]);
+
+  useEffect(() => {
+    if (genreBooksRaw.length > 0) setCachedGenreBooks(genreBooksRaw);
+  }, [genreBooksRaw]);
+
+  useEffect(() => {
+    if (ratingBooksRaw.length > 0) setCachedRatingBooks(ratingBooksRaw);
+  }, [ratingBooksRaw]);
+
+  useEffect(() => {
+    if (somethingNewBooksRaw.length > 0) setCachedSomethingNewBooks(somethingNewBooksRaw);
+  }, [somethingNewBooksRaw]);
+
+  // Use raw data if available, otherwise fall back to cached
+  const authorBooks = authorBooksRaw.length > 0 ? authorBooksRaw : cachedAuthorBooks;
+  const genreBooks = genreBooksRaw.length > 0 ? genreBooksRaw : cachedGenreBooks;
+  const ratingBooks = ratingBooksRaw.length > 0 ? ratingBooksRaw : cachedRatingBooks;
+  const somethingNewBooks = somethingNewBooksRaw.length > 0 ? somethingNewBooksRaw : cachedSomethingNewBooks;
 
   return {
     authorSuggestions: {
