@@ -31,6 +31,28 @@ export function SuggestionCarousel({
   const [cachedBooks, setCachedBooks] = useState<Book[]>([]);
   const detailRef = useRef<HTMLDivElement>(null);
 
+  // Track if we've ever successfully loaded books (prevents infinite loading)
+  const [hasCompletedFirstLoad, setHasCompletedFirstLoad] = useState(false);
+
+  // Mark first load complete when:
+  // 1. We receive books, OR
+  // 2. isLoading goes from true to false (fetch completed, even if empty)
+  const prevIsLoading = useRef(isLoading);
+
+  useEffect(() => {
+    if (books.length > 0) {
+      setHasCompletedFirstLoad(true);
+    }
+  }, [books]);
+
+  useEffect(() => {
+    // If isLoading just changed from true to false, fetch completed
+    if (prevIsLoading.current && !isLoading) {
+      setHasCompletedFirstLoad(true);
+    }
+    prevIsLoading.current = isLoading;
+  }, [isLoading]);
+
   // Cache books when we receive them (prevents empty flashes during refetch)
   useEffect(() => {
     if (books.length > 0) {
@@ -40,6 +62,10 @@ export function SuggestionCarousel({
 
   // Use incoming books if available, otherwise use cached
   const displayBooks = books.length > 0 ? books : cachedBooks;
+
+  // Component-level loading detection:
+  // Show loading if hook says loading OR if we have prerequisites but no books and haven't completed first load
+  const shouldShowLoading = isLoading || (hasData && displayBooks.length === 0 && !hasCompletedFirstLoad);
 
   const handleBookClick = (book: Book) => {
     setSelectedBook(selectedBook?.id === book.id ? null : book);
@@ -69,7 +95,7 @@ export function SuggestionCarousel({
     );
   }
 
-  if (isLoading) {
+  if (shouldShowLoading) {
     return (
       <div className="mx-4 mb-4 bg-white rounded-xl border border-gray-200 p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center justify-center gap-2">
@@ -94,15 +120,15 @@ export function SuggestionCarousel({
         {onRefresh && (
           <button
             onClick={onRefresh}
-            disabled={isLoading}
+            disabled={shouldShowLoading}
             className="text-xs text-gray-500 hover:text-primary-500 flex items-center gap-1 transition-colors disabled:opacity-50"
           >
-            <RefreshCw size={12} className={isLoading ? 'animate-spin' : ''} />
-            {isLoading ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw size={12} className={shouldShowLoading ? 'animate-spin' : ''} />
+            {shouldShowLoading ? 'Refreshing...' : 'Refresh'}
           </button>
         )}
       </div>
-      <div className={`flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x-mandatory -mx-1 px-1 ${isLoading ? 'opacity-50' : ''}`}>
+      <div className={`flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x-mandatory -mx-1 px-1 ${shouldShowLoading ? 'opacity-50' : ''}`}>
         {displayBooks.map((book) => (
           <div key={book.id} className="snap-start">
             <BookCard
