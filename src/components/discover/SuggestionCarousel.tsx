@@ -30,6 +30,14 @@ export function SuggestionCarousel({
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
 
+  // Cache last displayed books to prevent empty flashes during transitions
+  const cachedBooksRef = useRef<Book[]>([]);
+  if (books.length > 0) {
+    cachedBooksRef.current = books;
+  }
+  // Use incoming books if available, otherwise use cached
+  const displayBooks = books.length > 0 ? books : cachedBooksRef.current;
+
   const handleBookClick = (book: Book) => {
     setSelectedBook(selectedBook?.id === book.id ? null : book);
   };
@@ -58,9 +66,9 @@ export function SuggestionCarousel({
     );
   }
 
-  // Show full loading skeleton only on initial load (no books yet)
+  // Show full loading skeleton only on initial load (no books yet, even in cache)
   // During refresh, keep showing existing books with a loading indicator
-  const isInitialLoading = isLoading && books.length === 0;
+  const isInitialLoading = isLoading && displayBooks.length === 0;
 
   if (isInitialLoading) {
     return (
@@ -96,7 +104,7 @@ export function SuggestionCarousel({
         )}
       </div>
       <div className={`flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x-mandatory -mx-1 px-1 ${isLoading ? 'opacity-50' : ''}`}>
-        {books.map((book) => (
+        {displayBooks.map((book) => (
           <div key={book.id} className="snap-start">
             <BookCard
               book={book}
