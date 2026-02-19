@@ -78,15 +78,15 @@ export function useSuggestions(): UseSuggestionsResult {
   const authorQuery = useQuery({
     queryKey: ['suggestions-authors', refreshCounters.authors, savedBooks.length],
     queryFn: async () => {
-      // If this is a refresh (counter > 0), get fresh AI recommendations for just this category
-      if (refreshCounters.authors > 0) {
+      // If this is a refresh OR bulk data is empty, get fresh AI recommendations
+      if (refreshCounters.authors > 0 || !aiRecommendations?.byAuthors?.length) {
         const recs = await getSingleCategoryRecommendations(savedBooks, 'byAuthors');
         return fetchBookDetails(filterSaved(recs).slice(0, 3));
       }
       // Otherwise use the bulk recommendations
-      return fetchBookDetails(filterSaved(aiRecommendations?.byAuthors || []).slice(0, 3));
+      return fetchBookDetails(filterSaved(aiRecommendations.byAuthors).slice(0, 3));
     },
-    enabled: hasSavedBooks && (refreshCounters.authors > 0 || !!aiRecommendations?.byAuthors?.length),
+    enabled: hasSavedBooks && (refreshCounters.authors > 0 || aiRecommendations !== undefined),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     placeholderData: keepPreviousData,
@@ -95,13 +95,13 @@ export function useSuggestions(): UseSuggestionsResult {
   const genreQuery = useQuery({
     queryKey: ['suggestions-genres', refreshCounters.genres, readBooks.length],
     queryFn: async () => {
-      if (refreshCounters.genres > 0) {
+      if (refreshCounters.genres > 0 || !aiRecommendations?.byGenres?.length) {
         const recs = await getSingleCategoryRecommendations(savedBooks, 'byGenres');
         return fetchBookDetails(filterSaved(recs).slice(0, 3));
       }
-      return fetchBookDetails(filterSaved(aiRecommendations?.byGenres || []).slice(0, 3));
+      return fetchBookDetails(filterSaved(aiRecommendations.byGenres).slice(0, 3));
     },
-    enabled: hasReadBooks && (refreshCounters.genres > 0 || !!aiRecommendations?.byGenres?.length),
+    enabled: hasReadBooks && (refreshCounters.genres > 0 || aiRecommendations !== undefined),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     placeholderData: keepPreviousData,
@@ -110,13 +110,13 @@ export function useSuggestions(): UseSuggestionsResult {
   const ratingQuery = useQuery({
     queryKey: ['suggestions-ratings', refreshCounters.ratings, fiveStarBooks.length],
     queryFn: async () => {
-      if (refreshCounters.ratings > 0) {
+      if (refreshCounters.ratings > 0 || !aiRecommendations?.byRatings?.length) {
         const recs = await getSingleCategoryRecommendations(savedBooks, 'byRatings');
         return fetchBookDetails(filterSaved(recs).slice(0, 3));
       }
-      return fetchBookDetails(filterSaved(aiRecommendations?.byRatings || []).slice(0, 3));
+      return fetchBookDetails(filterSaved(aiRecommendations.byRatings).slice(0, 3));
     },
-    enabled: hasFiveStarBooks && (refreshCounters.ratings > 0 || !!aiRecommendations?.byRatings?.length),
+    enabled: hasFiveStarBooks && (refreshCounters.ratings > 0 || aiRecommendations !== undefined),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     placeholderData: keepPreviousData,
@@ -125,13 +125,13 @@ export function useSuggestions(): UseSuggestionsResult {
   const somethingNewQuery = useQuery({
     queryKey: ['suggestions-something-new', refreshCounters.somethingNew, savedBooks.length],
     queryFn: async () => {
-      if (refreshCounters.somethingNew > 0) {
+      if (refreshCounters.somethingNew > 0 || !aiRecommendations?.bySomethingNew?.length) {
         const recs = await getSingleCategoryRecommendations(savedBooks, 'bySomethingNew');
         return fetchBookDetails(filterSaved(recs).slice(0, 3));
       }
-      return fetchBookDetails(filterSaved(aiRecommendations?.bySomethingNew || []).slice(0, 3));
+      return fetchBookDetails(filterSaved(aiRecommendations.bySomethingNew).slice(0, 3));
     },
-    enabled: hasSavedBooks && (refreshCounters.somethingNew > 0 || !!aiRecommendations?.bySomethingNew?.length),
+    enabled: hasSavedBooks && (refreshCounters.somethingNew > 0 || aiRecommendations !== undefined),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     placeholderData: keepPreviousData,
