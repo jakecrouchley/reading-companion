@@ -261,26 +261,26 @@ export function useSuggestions(): UseSuggestionsResult {
   return {
     authorSuggestions: {
       books: hasSavedBooks ? authorBooks : [],
-      // isPending = no data yet (status === 'pending'). More reliable than isFetching || !isSuccess
-      isLoading: hasSavedBooks && authorQuery.isPending,
+      // Show loading when: has prerequisites AND (query not yet fetched OR currently fetching)
+      isLoading: hasSavedBooks && (!authorQuery.isFetched || authorQuery.isFetching),
       isLoadingMore: hasSavedBooks && authorMoreQuery.isFetching,
       refetch: refetchAuthors,
     },
     genreSuggestions: {
       books: hasReadBooks ? genreBooks : [],
-      isLoading: hasReadBooks && genreQuery.isPending,
+      isLoading: hasReadBooks && (!genreQuery.isFetched || genreQuery.isFetching),
       isLoadingMore: hasReadBooks && genreMoreQuery.isFetching,
       refetch: refetchGenres,
     },
     ratingSuggestions: {
       books: hasFiveStarBooks ? ratingBooks : [],
-      isLoading: hasFiveStarBooks && ratingQuery.isPending,
+      isLoading: hasFiveStarBooks && (!ratingQuery.isFetched || ratingQuery.isFetching),
       isLoadingMore: hasFiveStarBooks && ratingMoreQuery.isFetching,
       refetch: refetchRatings,
     },
     somethingNewSuggestions: {
       books: hasSavedBooks ? somethingNewBooks : [],
-      isLoading: hasSavedBooks && somethingNewQuery.isPending,
+      isLoading: hasSavedBooks && (!somethingNewQuery.isFetched || somethingNewQuery.isFetching),
       isLoadingMore: hasSavedBooks && somethingNewMoreQuery.isFetching,
       refetch: refetchSomethingNew,
     },
