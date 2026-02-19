@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useRef } from 'react';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useSavedBooksStore } from '@/stores';
 import { getAIRecommendations, getSingleCategoryRecommendations } from '@/services/api/openai';
@@ -215,28 +215,42 @@ export function useSuggestions(): UseSuggestionsResult {
   }, [queryClient]);
 
   // Combine initial and more books for each category
+  // Use refs to cache last successful data - prevents empty flashes during transitions
+  const cachedAuthorBooks = useRef<Book[]>([]);
+  const cachedGenreBooks = useRef<Book[]>([]);
+  const cachedRatingBooks = useRef<Book[]>([]);
+  const cachedSomethingNewBooks = useRef<Book[]>([]);
+
   const authorBooks = useMemo(() => {
     const initial = authorQuery.data || [];
     const more = authorMoreQuery.data || [];
-    return [...initial, ...more];
+    const books = [...initial, ...more];
+    if (books.length > 0) cachedAuthorBooks.current = books;
+    return books.length > 0 ? books : cachedAuthorBooks.current;
   }, [authorQuery.data, authorMoreQuery.data]);
 
   const genreBooks = useMemo(() => {
     const initial = genreQuery.data || [];
     const more = genreMoreQuery.data || [];
-    return [...initial, ...more];
+    const books = [...initial, ...more];
+    if (books.length > 0) cachedGenreBooks.current = books;
+    return books.length > 0 ? books : cachedGenreBooks.current;
   }, [genreQuery.data, genreMoreQuery.data]);
 
   const ratingBooks = useMemo(() => {
     const initial = ratingQuery.data || [];
     const more = ratingMoreQuery.data || [];
-    return [...initial, ...more];
+    const books = [...initial, ...more];
+    if (books.length > 0) cachedRatingBooks.current = books;
+    return books.length > 0 ? books : cachedRatingBooks.current;
   }, [ratingQuery.data, ratingMoreQuery.data]);
 
   const somethingNewBooks = useMemo(() => {
     const initial = somethingNewQuery.data || [];
     const more = somethingNewMoreQuery.data || [];
-    return [...initial, ...more];
+    const books = [...initial, ...more];
+    if (books.length > 0) cachedSomethingNewBooks.current = books;
+    return books.length > 0 ? books : cachedSomethingNewBooks.current;
   }, [somethingNewQuery.data, somethingNewMoreQuery.data]);
 
   return {
