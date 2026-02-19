@@ -75,18 +75,18 @@ export function useSuggestions(): UseSuggestionsResult {
   });
 
   // Individual category queries - can be refreshed independently (initial 3 books)
+  // These fetch directly without waiting for bulk query - simpler and more reliable
   const authorQuery = useQuery({
     queryKey: ['suggestions-authors', refreshCounters.authors, savedBooks.length],
     queryFn: async () => {
-      // If this is a refresh OR bulk data is empty, get fresh AI recommendations
-      if (refreshCounters.authors > 0 || !aiRecommendations?.byAuthors?.length) {
-        const recs = await getSingleCategoryRecommendations(savedBooks, 'byAuthors');
-        return fetchBookDetails(filterSaved(recs).slice(0, 3));
+      // Use bulk data if available, otherwise fetch directly
+      if (aiRecommendations?.byAuthors?.length) {
+        return fetchBookDetails(filterSaved(aiRecommendations.byAuthors).slice(0, 3));
       }
-      // Otherwise use the bulk recommendations
-      return fetchBookDetails(filterSaved(aiRecommendations.byAuthors).slice(0, 3));
+      const recs = await getSingleCategoryRecommendations(savedBooks, 'byAuthors');
+      return fetchBookDetails(filterSaved(recs).slice(0, 3));
     },
-    enabled: hasSavedBooks && (refreshCounters.authors > 0 || aiRecommendations !== undefined),
+    enabled: hasSavedBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     placeholderData: keepPreviousData,
@@ -95,13 +95,13 @@ export function useSuggestions(): UseSuggestionsResult {
   const genreQuery = useQuery({
     queryKey: ['suggestions-genres', refreshCounters.genres, readBooks.length],
     queryFn: async () => {
-      if (refreshCounters.genres > 0 || !aiRecommendations?.byGenres?.length) {
-        const recs = await getSingleCategoryRecommendations(savedBooks, 'byGenres');
-        return fetchBookDetails(filterSaved(recs).slice(0, 3));
+      if (aiRecommendations?.byGenres?.length) {
+        return fetchBookDetails(filterSaved(aiRecommendations.byGenres).slice(0, 3));
       }
-      return fetchBookDetails(filterSaved(aiRecommendations.byGenres).slice(0, 3));
+      const recs = await getSingleCategoryRecommendations(savedBooks, 'byGenres');
+      return fetchBookDetails(filterSaved(recs).slice(0, 3));
     },
-    enabled: hasReadBooks && (refreshCounters.genres > 0 || aiRecommendations !== undefined),
+    enabled: hasReadBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     placeholderData: keepPreviousData,
@@ -110,13 +110,13 @@ export function useSuggestions(): UseSuggestionsResult {
   const ratingQuery = useQuery({
     queryKey: ['suggestions-ratings', refreshCounters.ratings, fiveStarBooks.length],
     queryFn: async () => {
-      if (refreshCounters.ratings > 0 || !aiRecommendations?.byRatings?.length) {
-        const recs = await getSingleCategoryRecommendations(savedBooks, 'byRatings');
-        return fetchBookDetails(filterSaved(recs).slice(0, 3));
+      if (aiRecommendations?.byRatings?.length) {
+        return fetchBookDetails(filterSaved(aiRecommendations.byRatings).slice(0, 3));
       }
-      return fetchBookDetails(filterSaved(aiRecommendations.byRatings).slice(0, 3));
+      const recs = await getSingleCategoryRecommendations(savedBooks, 'byRatings');
+      return fetchBookDetails(filterSaved(recs).slice(0, 3));
     },
-    enabled: hasFiveStarBooks && (refreshCounters.ratings > 0 || aiRecommendations !== undefined),
+    enabled: hasFiveStarBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     placeholderData: keepPreviousData,
@@ -125,13 +125,13 @@ export function useSuggestions(): UseSuggestionsResult {
   const somethingNewQuery = useQuery({
     queryKey: ['suggestions-something-new', refreshCounters.somethingNew, savedBooks.length],
     queryFn: async () => {
-      if (refreshCounters.somethingNew > 0 || !aiRecommendations?.bySomethingNew?.length) {
-        const recs = await getSingleCategoryRecommendations(savedBooks, 'bySomethingNew');
-        return fetchBookDetails(filterSaved(recs).slice(0, 3));
+      if (aiRecommendations?.bySomethingNew?.length) {
+        return fetchBookDetails(filterSaved(aiRecommendations.bySomethingNew).slice(0, 3));
       }
-      return fetchBookDetails(filterSaved(aiRecommendations.bySomethingNew).slice(0, 3));
+      const recs = await getSingleCategoryRecommendations(savedBooks, 'bySomethingNew');
+      return fetchBookDetails(filterSaved(recs).slice(0, 3));
     },
-    enabled: hasSavedBooks && (refreshCounters.somethingNew > 0 || aiRecommendations !== undefined),
+    enabled: hasSavedBooks,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     placeholderData: keepPreviousData,
@@ -242,25 +242,25 @@ export function useSuggestions(): UseSuggestionsResult {
   return {
     authorSuggestions: {
       books: hasSavedBooks ? authorBooks : [],
-      isLoading: isFetchingAI || (hasSavedBooks && (authorQuery.isFetching || authorBooks.length === 0)),
+      isLoading: hasSavedBooks && authorQuery.isFetching,
       isLoadingMore: hasSavedBooks && authorMoreQuery.isFetching,
       refetch: refetchAuthors,
     },
     genreSuggestions: {
       books: hasReadBooks ? genreBooks : [],
-      isLoading: isFetchingAI || (hasReadBooks && (genreQuery.isFetching || genreBooks.length === 0)),
+      isLoading: hasReadBooks && genreQuery.isFetching,
       isLoadingMore: hasReadBooks && genreMoreQuery.isFetching,
       refetch: refetchGenres,
     },
     ratingSuggestions: {
       books: hasFiveStarBooks ? ratingBooks : [],
-      isLoading: isFetchingAI || (hasFiveStarBooks && (ratingQuery.isFetching || ratingBooks.length === 0)),
+      isLoading: hasFiveStarBooks && ratingQuery.isFetching,
       isLoadingMore: hasFiveStarBooks && ratingMoreQuery.isFetching,
       refetch: refetchRatings,
     },
     somethingNewSuggestions: {
       books: hasSavedBooks ? somethingNewBooks : [],
-      isLoading: isFetchingAI || (hasSavedBooks && (somethingNewQuery.isFetching || somethingNewBooks.length === 0)),
+      isLoading: hasSavedBooks && somethingNewQuery.isFetching,
       isLoadingMore: hasSavedBooks && somethingNewMoreQuery.isFetching,
       refetch: refetchSomethingNew,
     },
