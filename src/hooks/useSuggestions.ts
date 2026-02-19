@@ -242,25 +242,25 @@ export function useSuggestions(): UseSuggestionsResult {
   return {
     authorSuggestions: {
       books: hasSavedBooks ? authorBooks : [],
-      isLoading: hasSavedBooks && authorQuery.isFetching,
+      isLoading: hasSavedBooks && (authorQuery.isFetching || authorQuery.isPending),
       isLoadingMore: hasSavedBooks && authorMoreQuery.isFetching,
       refetch: refetchAuthors,
     },
     genreSuggestions: {
       books: hasReadBooks ? genreBooks : [],
-      isLoading: hasReadBooks && genreQuery.isFetching,
+      isLoading: hasReadBooks && (genreQuery.isFetching || genreQuery.isPending),
       isLoadingMore: hasReadBooks && genreMoreQuery.isFetching,
       refetch: refetchGenres,
     },
     ratingSuggestions: {
       books: hasFiveStarBooks ? ratingBooks : [],
-      isLoading: hasFiveStarBooks && ratingQuery.isFetching,
+      isLoading: hasFiveStarBooks && (ratingQuery.isFetching || ratingQuery.isPending),
       isLoadingMore: hasFiveStarBooks && ratingMoreQuery.isFetching,
       refetch: refetchRatings,
     },
     somethingNewSuggestions: {
       books: hasSavedBooks ? somethingNewBooks : [],
-      isLoading: hasSavedBooks && somethingNewQuery.isFetching,
+      isLoading: hasSavedBooks && (somethingNewQuery.isFetching || somethingNewQuery.isPending),
       isLoadingMore: hasSavedBooks && somethingNewMoreQuery.isFetching,
       refetch: refetchSomethingNew,
     },
