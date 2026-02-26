@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Bookmark, Check } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { Button, Badge, StarRating } from '@/components/ui';
 import { useSavedBooksStore } from '@/stores';
+import { useOpenLibraryRatings } from '@/hooks';
 import type { Book } from '@/types';
 
 interface BookDetailCardProps {
@@ -13,12 +14,27 @@ interface BookDetailCardProps {
   notesPlaceholder?: string;
 }
 
+const OPEN_LIBRARY_MIN_RATINGS = 10;
+
 export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCardProps) {
   const [notes, setNotes] = useState('');
   const [showFullDescription, setShowFullDescription] = useState(false);
 
   const saveBook = useSavedBooksStore((s) => s.saveBook);
   const isSaved = useSavedBooksStore((s) => s.savedBooks.some((sb) => sb.bookId === book.id));
+
+  // Fetch Open Library ratings for better social proof
+  const { data: openLibraryRatings, isLoading: isLoadingRatings } = useOpenLibraryRatings(book.isbn);
+
+  // Determine which ratings to display (prefer Open Library if it has 10+ ratings, otherwise use Google Books)
+  const hasOpenLibraryRatings = openLibraryRatings && openLibraryRatings.count >= OPEN_LIBRARY_MIN_RATINGS;
+  const hasGoogleRatings = book.averageRating !== undefined;
+
+  const displayRating = hasOpenLibraryRatings
+    ? { average: openLibraryRatings.average, count: openLibraryRatings.count, source: 'Open Library' }
+    : hasGoogleRatings
+      ? { average: book.averageRating!, count: book.ratingsCount, source: 'Google Books' }
+      : null;
 
   const handleSave = () => {
     if (!isSaved) {
@@ -63,20 +79,22 @@ export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCa
             ))}
           </div>
           <div className="mt-2">
-            {book.averageRating ? (
+            {isLoadingRatings ? (
+              <p className="text-xs text-gray-400">Loading ratings...</p>
+            ) : displayRating ? (
               <>
                 <div className="flex items-center gap-1.5">
-                  <StarRating rating={book.averageRating} size={14} showValue />
-                  {book.ratingsCount && (
+                  <StarRating rating={displayRating.average} size={14} showValue />
+                  {displayRating.count !== undefined && (
                     <span className="text-xs text-gray-400">
-                      ({book.ratingsCount.toLocaleString()})
+                      ({displayRating.count.toLocaleString()} {displayRating.count === 1 ? 'rating' : 'ratings'})
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">Google Books rating</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{displayRating.source}</p>
               </>
             ) : (
-              <p className="text-xs text-gray-400">No Google rating available</p>
+              <p className="text-xs text-gray-400">No ratings available</p>
             )}
           </div>
         </div>

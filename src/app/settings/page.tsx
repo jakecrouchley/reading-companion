@@ -2,12 +2,82 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Trash2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Trash2, MessageSquare, Download, ChevronDown } from 'lucide-react';
 import { useSavedBooksStore, useUserStore } from '@/stores';
+import type { SavedBook } from '@/types';
+
+function downloadFile(content: string, filename: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function exportAsJSON(savedBooks: SavedBook[]) {
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    version: '1.0',
+    books: savedBooks,
+  };
+  const json = JSON.stringify(exportData, null, 2);
+  const date = new Date().toISOString().split('T')[0];
+  downloadFile(json, `reading-list-${date}.json`, 'application/json');
+}
+
+function exportAsCSV(savedBooks: SavedBook[]) {
+  const headers = [
+    'Title',
+    'Authors',
+    'Status',
+    'User Rating',
+    'Notes',
+    'Categories',
+    'Published Date',
+    'Page Count',
+    'ISBN',
+    'Saved At',
+    'Started At',
+    'Read At',
+  ];
+
+  const escapeCSV = (value: string | undefined | null): string => {
+    if (value === undefined || value === null) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const rows = savedBooks.map((sb) => [
+    escapeCSV(sb.book.title),
+    escapeCSV(sb.book.authors?.join('; ')),
+    escapeCSV(sb.status),
+    sb.userRating?.toString() ?? '',
+    escapeCSV(sb.notes),
+    escapeCSV(sb.book.categories?.join('; ')),
+    escapeCSV(sb.book.publishedDate),
+    sb.book.pageCount?.toString() ?? '',
+    escapeCSV(sb.book.isbn),
+    new Date(sb.savedAt).toISOString(),
+    sb.startedAt ? new Date(sb.startedAt).toISOString() : '',
+    sb.readAt ? new Date(sb.readAt).toISOString() : '',
+  ]);
+
+  const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+  const date = new Date().toISOString().split('T')[0];
+  downloadFile(csv, `reading-list-${date}.csv`, 'text/csv');
+}
 
 export default function SettingsPage() {
   const router = useRouter();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showExportOptions, setShowExportOptions] = useState(false);
   const resetUserStore = useUserStore((s) => s.reset);
   const savedBooks = useSavedBooksStore((s) => s.savedBooks);
 
@@ -46,6 +116,41 @@ export default function SettingsPage() {
             I'd love to hear your feedback, frustrations and ideas for future development! Please share all feedback to dowds.louise@gmail.com
           </p>
         </a>
+
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <button
+            onClick={() => setShowExportOptions(!showExportOptions)}
+            className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+          >
+            <Download size={20} className="text-primary-500" />
+            <span className="font-medium text-gray-900 flex-1 text-left">Export options</span>
+            <ChevronDown
+              size={20}
+              className={`text-gray-400 transition-transform ${showExportOptions ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {showExportOptions && (
+            <div className="border-t border-gray-200 p-4 space-y-2 bg-gray-50">
+              <p className="text-sm text-gray-500 mb-3">
+                Export your reading list ({savedBooks.length} {savedBooks.length === 1 ? 'book' : 'books'})
+              </p>
+              <button
+                onClick={() => exportAsJSON(savedBooks)}
+                disabled={savedBooks.length === 0}
+                className="w-full px-4 py-2.5 bg-primary-500 rounded-lg font-medium text-white hover:bg-primary-600 active:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Download as JSON
+              </button>
+              <button
+                onClick={() => exportAsCSV(savedBooks)}
+                disabled={savedBooks.length === 0}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Download as CSV
+              </button>
+            </div>
+          )}
+        </div>
 
         <button
           onClick={() => setShowConfirmDialog(true)}

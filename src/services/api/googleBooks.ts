@@ -26,6 +26,41 @@ interface GoogleBookVolume {
   };
 }
 
+// Common book genres/categories for detection
+const COMMON_GENRES = [
+  'fiction', 'nonfiction', 'non-fiction',
+  'mystery', 'thriller', 'suspense', 'crime',
+  'romance', 'love',
+  'science fiction', 'sci-fi', 'scifi', 'fantasy', 'dystopian',
+  'historical fiction', 'historical',
+  'horror', 'gothic',
+  'biography', 'memoir', 'autobiography',
+  'self-help', 'self help', 'personal development',
+  'business', 'economics', 'finance',
+  'children', 'kids', 'young adult', 'ya', 'juvenile',
+  'cooking', 'cookbook', 'recipes',
+  'travel', 'adventure',
+  'poetry', 'drama', 'plays',
+  'religion', 'spirituality', 'philosophy',
+  'science', 'technology', 'computers', 'programming',
+  'health', 'fitness', 'wellness',
+  'art', 'photography', 'music',
+  'history', 'politics', 'true crime',
+  'humor', 'comedy', 'satire',
+  'graphic novel', 'comics', 'manga',
+  'literary fiction', 'classics', 'contemporary',
+  'western', 'paranormal', 'supernatural',
+];
+
+function isLikelyGenreSearch(query: string): boolean {
+  const normalizedQuery = query.toLowerCase().trim();
+  return COMMON_GENRES.some(genre =>
+    normalizedQuery === genre ||
+    normalizedQuery.includes(genre) ||
+    genre.includes(normalizedQuery)
+  );
+}
+
 function transformGoogleBook(volume: GoogleBookVolume): Book {
   const { volumeInfo } = volume;
   const isbn = volumeInfo.industryIdentifiers?.find(
@@ -52,8 +87,10 @@ export async function searchBooks(query: string): Promise<Book[]> {
   if (!query.trim()) return [];
 
   try {
-    // Search both title and author in parallel for better results
-    const [titleResults, authorResults] = await Promise.all([
+    const isGenreSearch = isLikelyGenreSearch(query);
+
+    // Build search requests based on query type
+    const searchPromises = [
       axios.get(GOOGLE_BOOKS_API, {
         params: {
           q: `intitle:${query}`,
@@ -68,35 +105,63 @@ export async function searchBooks(query: string): Promise<Book[]> {
           maxResults: 15,
         },
       }),
-    ]);
+    ];
 
-    const titleBooks: Book[] = (titleResults.data.items || []).map(transformGoogleBook);
-    const authorBooks: Book[] = (authorResults.data.items || []).map(transformGoogleBook);
+    // Add subject search for genre queries
+    if (isGenreSearch) {
+      searchPromises.push(
+        axios.get(GOOGLE_BOOKS_API, {
+          params: {
+            q: `subject:${query}`,
+            key: API_KEY,
+            maxResults: 20,
+            orderBy: 'relevance',
+          },
+        })
+      );
+    }
 
-    // Merge results, prioritizing author matches when query looks like an author name
-    // (single word or 2-3 words without common title words)
+    // Use allSettled so one failed request doesn't break the entire search
+    const results = await Promise.allSettled(searchPromises);
+
+    const getBooks = (result: PromiseSettledResult<unknown>): Book[] => {
+      if (result.status === 'fulfilled') {
+        const data = result.value as { data: { items?: GoogleBookVolume[] } };
+        return (data.data.items || []).map(transformGoogleBook);
+      }
+      return [];
+    };
+
+    const titleBooks = getBooks(results[0]);
+    const authorBooks = getBooks(results[1]);
+    const genreBooks = isGenreSearch ? getBooks(results[2]) : [];
+
+    // Determine search type priority
     const queryWords = query.trim().split(/\s+/);
-    const isLikelyAuthorSearch = queryWords.length <= 3 &&
+    const isLikelyAuthorSearch = !isGenreSearch && queryWords.length <= 3 &&
       !query.toLowerCase().match(/\b(the|a|an|of|and|in|on|at|to|for)\b/);
 
     const seen = new Set<string>();
     const merged: Book[] = [];
 
-    // Add books in order of priority
-    const primaryResults = isLikelyAuthorSearch ? authorBooks : titleBooks;
-    const secondaryResults = isLikelyAuthorSearch ? titleBooks : authorBooks;
-
-    for (const book of primaryResults) {
-      if (!seen.has(book.id)) {
-        seen.add(book.id);
-        merged.push(book);
-      }
+    // Determine priority order based on search type
+    let orderedResults: Book[][];
+    if (isGenreSearch) {
+      // For genre searches, prioritize subject results, then title, then author
+      orderedResults = [genreBooks, titleBooks, authorBooks];
+    } else if (isLikelyAuthorSearch) {
+      orderedResults = [authorBooks, titleBooks];
+    } else {
+      orderedResults = [titleBooks, authorBooks];
     }
 
-    for (const book of secondaryResults) {
-      if (!seen.has(book.id)) {
-        seen.add(book.id);
-        merged.push(book);
+    // Add books in priority order
+    for (const resultSet of orderedResults) {
+      for (const book of resultSet) {
+        if (!seen.has(book.id)) {
+          seen.add(book.id);
+          merged.push(book);
+        }
       }
     }
 
