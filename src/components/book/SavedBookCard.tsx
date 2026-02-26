@@ -98,17 +98,45 @@ export function SavedBookCard({ savedBook, isExpanded, onToggle }: SavedBookCard
               <label className="text-sm font-medium text-gray-700 block mb-2">
                 Reading Status
               </label>
-              <div className="flex gap-2">
-                {(['not_started', 'reading', 'read'] as ReadingStatus[]).map((status) => (
-                  <Button
-                    key={status}
-                    variant={savedBook.status === status ? 'primary' : 'secondary'}
-                    size="sm"
-                    onClick={() => handleStatusChange(status)}
-                  >
-                    {status === 'not_started' ? 'Not Started' : status === 'reading' ? 'Reading' : 'Read'}
-                  </Button>
-                ))}
+              <div className="flex flex-wrap gap-2">
+                {(['not_started', 'reading', 'read', 'quit'] as ReadingStatus[]).map((status) => {
+                  const isSelected = savedBook.status === status;
+                  const statusStyles: Record<ReadingStatus, { active: string; inactive: string }> = {
+                    not_started: {
+                      active: 'bg-yellow-500 text-white hover:bg-yellow-600',
+                      inactive: 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200',
+                    },
+                    reading: {
+                      active: 'bg-blue-500 text-white hover:bg-blue-600',
+                      inactive: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200',
+                    },
+                    read: {
+                      active: 'bg-green-500 text-white hover:bg-green-600',
+                      inactive: 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200',
+                    },
+                    quit: {
+                      active: 'bg-red-500 text-white hover:bg-red-600',
+                      inactive: 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200',
+                    },
+                  };
+                  const statusLabels: Record<ReadingStatus, string> = {
+                    not_started: 'Not Started',
+                    reading: 'Reading',
+                    read: 'Read',
+                    quit: 'Quit',
+                  };
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(status)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        isSelected ? statusStyles[status].active : statusStyles[status].inactive
+                      }`}
+                    >
+                      {statusLabels[status]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

@@ -12,7 +12,7 @@ export interface Book {
   language?: string;
 }
 
-export type ReadingStatus = 'not_started' | 'reading' | 'read';
+export type ReadingStatus = 'not_started' | 'reading' | 'read' | 'quit';
 
 export interface SavedBook {
   id: string;

@@ -3,10 +3,10 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Bookmark } from 'lucide-react';
-import { Button, Badge, StarRating } from '@/components/ui';
+import { Badge, StarRating } from '@/components/ui';
 import { useSavedBooksStore } from '@/stores';
 import { useOpenLibraryRatings } from '@/hooks';
-import type { Book } from '@/types';
+import type { Book, ReadingStatus } from '@/types';
 
 interface BookDetailCardProps {
   book: Book;
@@ -22,7 +22,9 @@ export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCa
   const cardRef = useRef<HTMLDivElement>(null);
 
   const saveBook = useSavedBooksStore((s) => s.saveBook);
-  const isSaved = useSavedBooksStore((s) => s.savedBooks.some((sb) => sb.bookId === book.id));
+  const updateBook = useSavedBooksStore((s) => s.updateBook);
+  const savedBook = useSavedBooksStore((s) => s.savedBooks.find((sb) => sb.bookId === book.id));
+  const isSaved = !!savedBook;
 
   // Fetch Open Library ratings
   const { data: openLibraryRatings, isLoading: isLoadingRatings } = useOpenLibraryRatings(book.isbn);
@@ -35,7 +37,24 @@ export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCa
   const handleSave = () => {
     if (!isSaved) {
       saveBook(book, notes.trim() || undefined);
-      onClose?.();
+    }
+  };
+
+  const handleStatusChange = (status: ReadingStatus) => {
+    if (savedBook) {
+      updateBook(savedBook.id, { status });
+    }
+  };
+
+  const handleRatingChange = (rating: number) => {
+    if (savedBook) {
+      updateBook(savedBook.id, { userRating: rating });
+    }
+  };
+
+  const handleNotesChange = (newNotes: string) => {
+    if (savedBook) {
+      updateBook(savedBook.id, { notes: newNotes.trim() || undefined });
     }
   };
 
@@ -123,27 +142,98 @@ export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCa
         </div>
       )}
 
-      {!isSaved && (
-        <textarea
-          placeholder={notesPlaceholder || "Add a note (e.g., 'Anna recommended this at dinner')"}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="w-full mt-4 p-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-          rows={2}
-        />
-      )}
+      {isSaved ? (
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Reading Status
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {(['not_started', 'reading', 'read', 'quit'] as ReadingStatus[]).map((status) => {
+                const isSelected = savedBook?.status === status;
+                const statusStyles: Record<ReadingStatus, { active: string; inactive: string }> = {
+                  not_started: {
+                    active: 'bg-yellow-500 text-white hover:bg-yellow-600',
+                    inactive: 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200',
+                  },
+                  reading: {
+                    active: 'bg-blue-500 text-white hover:bg-blue-600',
+                    inactive: 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200',
+                  },
+                  read: {
+                    active: 'bg-green-500 text-white hover:bg-green-600',
+                    inactive: 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200',
+                  },
+                  quit: {
+                    active: 'bg-red-500 text-white hover:bg-red-600',
+                    inactive: 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200',
+                  },
+                };
+                const statusLabels: Record<ReadingStatus, string> = {
+                  not_started: 'Not Started',
+                  reading: 'Reading',
+                  read: 'Read',
+                  quit: 'Quit',
+                };
+                return (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusChange(status)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      isSelected ? statusStyles[status].active : statusStyles[status].inactive
+                    }`}
+                  >
+                    {statusLabels[status]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-      {!isSaved && (
-        <div className="mt-4">
-          <Button
-            onClick={handleSave}
-            variant="primary"
-            className="w-full"
-            icon={<Bookmark size={18} />}
-          >
-            Save to Reading List
-          </Button>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Your Rating
+            </label>
+            <StarRating
+              rating={savedBook?.userRating || 0}
+              size={24}
+              interactive
+              onChange={handleRatingChange}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Notes
+            </label>
+            <textarea
+              placeholder={notesPlaceholder || "Add a note (e.g., 'Anna recommended this at dinner')"}
+              defaultValue={savedBook?.notes || ''}
+              onBlur={(e) => handleNotesChange(e.target.value)}
+              className="w-full p-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none text-sm"
+              rows={2}
+            />
+          </div>
         </div>
+      ) : (
+        <>
+          <textarea
+            placeholder={notesPlaceholder || "Add a note (e.g., 'Anna recommended this at dinner')"}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full mt-4 p-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+            rows={2}
+          />
+          <div className="mt-4">
+            <button
+              onClick={handleSave}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors"
+            >
+              <Bookmark size={18} />
+              Save to Reading List
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

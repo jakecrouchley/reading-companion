@@ -7,7 +7,7 @@ interface StatusBadgeProps {
 const statusConfig: Record<ReadingStatus, { label: string; className: string }> = {
   not_started: {
     label: 'Not Started',
-    className: 'bg-gray-100 text-gray-700',
+    className: 'bg-yellow-100 text-yellow-700',
   },
   reading: {
     label: 'Reading',
@@ -16,6 +16,10 @@ const statusConfig: Record<ReadingStatus, { label: string; className: string }> 
   read: {
     label: 'Read',
     className: 'bg-green-100 text-green-700',
+  },
+  quit: {
+    label: 'Quit',
+    className: 'bg-red-100 text-red-700',
   },
 };
 
