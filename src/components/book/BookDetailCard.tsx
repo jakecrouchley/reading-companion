@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Bookmark } from 'lucide-react';
 import { Button, Badge, StarRating } from '@/components/ui';
@@ -19,22 +19,18 @@ const OPEN_LIBRARY_MIN_RATINGS = 10;
 export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCardProps) {
   const [notes, setNotes] = useState('');
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const saveBook = useSavedBooksStore((s) => s.saveBook);
   const isSaved = useSavedBooksStore((s) => s.savedBooks.some((sb) => sb.bookId === book.id));
 
-  // Fetch Open Library ratings for better social proof
+  // Fetch Open Library ratings
   const { data: openLibraryRatings, isLoading: isLoadingRatings } = useOpenLibraryRatings(book.isbn);
 
-  // Determine which ratings to display (prefer Open Library if it has 10+ ratings, otherwise use Google Books)
-  const hasOpenLibraryRatings = openLibraryRatings && openLibraryRatings.count >= OPEN_LIBRARY_MIN_RATINGS;
-  const hasGoogleRatings = book.averageRating !== undefined;
-
-  const displayRating = hasOpenLibraryRatings
-    ? { average: openLibraryRatings.average, count: openLibraryRatings.count, source: 'Open Library' }
-    : hasGoogleRatings
-      ? { average: book.averageRating!, count: book.ratingsCount, source: 'Google Books' }
-      : null;
+  // Only show ratings from Open Library with sufficient count
+  const displayRating = openLibraryRatings && openLibraryRatings.count >= OPEN_LIBRARY_MIN_RATINGS
+    ? { average: openLibraryRatings.average, count: openLibraryRatings.count }
+    : null;
 
   const handleSave = () => {
     if (!isSaved) {
@@ -45,8 +41,20 @@ export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCa
 
   const mainGenres = book.categories?.slice(0, 3) || [];
 
+  const handleToggleDescription = () => {
+    const isCollapsing = showFullDescription;
+    setShowFullDescription(!showFullDescription);
+
+    // Scroll card into view when collapsing description
+    if (isCollapsing && cardRef.current) {
+      setTimeout(() => {
+        cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+  };
+
   return (
-    <div className="bg-gray-50 p-4 mx-4 rounded-xl mb-4">
+    <div ref={cardRef} className="bg-gray-50 p-4 mx-4 rounded-xl mb-4">
       <div className="flex gap-4">
         <div className="relative w-24 h-36 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
           {book.thumbnail ? (
@@ -82,17 +90,12 @@ export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCa
             {isLoadingRatings ? (
               <p className="text-xs text-gray-400">Loading ratings...</p>
             ) : displayRating ? (
-              <>
-                <div className="flex items-center gap-1.5">
-                  <StarRating rating={displayRating.average} size={14} showValue />
-                  {displayRating.count !== undefined && (
-                    <span className="text-xs text-gray-400">
-                      ({displayRating.count.toLocaleString()} {displayRating.count === 1 ? 'rating' : 'ratings'})
-                    </span>
-                  )}
-                </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">{displayRating.source}</p>
-              </>
+              <div className="flex items-center gap-1.5">
+                <StarRating rating={displayRating.average} size={14} showValue />
+                <span className="text-xs text-gray-400">
+                  ({displayRating.count.toLocaleString()} {displayRating.count === 1 ? 'rating' : 'ratings'})
+                </span>
+              </div>
             ) : (
               <p className="text-xs text-gray-400">No ratings available</p>
             )}
@@ -111,7 +114,7 @@ export function BookDetailCard({ book, onClose, notesPlaceholder }: BookDetailCa
           </p>
           {book.description.length > 150 && (
             <button
-              onClick={() => setShowFullDescription(!showFullDescription)}
+              onClick={handleToggleDescription}
               className="text-primary-500 text-sm mt-1 hover:underline"
             >
               {showFullDescription ? 'Show less' : 'Show more'}

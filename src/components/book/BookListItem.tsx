@@ -19,18 +19,13 @@ export function BookListItem({ book, onPress, isExpanded }: BookListItemProps) {
   const saveBook = useSavedBooksStore((s) => s.saveBook);
   const isSaved = useSavedBooksStore((s) => s.savedBooks.some((sb) => sb.bookId === book.id));
 
-  // Fetch Open Library ratings for better social proof
-  const { data: openLibraryRatings } = useOpenLibraryRatings(book.isbn);
+  // Fetch Open Library ratings
+  const { data: openLibraryRatings, isLoading: isLoadingRatings } = useOpenLibraryRatings(book.isbn);
 
-  // Determine which ratings to display (prefer Open Library if it has 10+ ratings, otherwise use Google Books)
-  const hasOpenLibraryRatings = openLibraryRatings && openLibraryRatings.count >= OPEN_LIBRARY_MIN_RATINGS;
-  const hasGoogleRatings = book.averageRating !== undefined;
-
-  const displayRating = hasOpenLibraryRatings
+  // Only show ratings from Open Library with sufficient count
+  const displayRating = openLibraryRatings && openLibraryRatings.count >= OPEN_LIBRARY_MIN_RATINGS
     ? { average: openLibraryRatings.average, count: openLibraryRatings.count }
-    : hasGoogleRatings
-      ? { average: book.averageRating!, count: book.ratingsCount }
-      : null;
+    : null;
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -67,9 +62,11 @@ export function BookListItem({ book, onPress, isExpanded }: BookListItemProps) {
           <p className="text-sm text-gray-500 mt-1 line-clamp-1">
             {book.authors?.join(', ') || 'Unknown Author'}
           </p>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             <Badge label={mainGenre} size="sm" />
-            {displayRating && (
+            {isLoadingRatings ? (
+              <span className="text-[10px] text-gray-400">Loading...</span>
+            ) : displayRating ? (
               <div className="flex items-center gap-1">
                 <StarRating rating={displayRating.average} size={12} />
                 {displayRating.count !== undefined && (
@@ -80,7 +77,7 @@ export function BookListItem({ book, onPress, isExpanded }: BookListItemProps) {
                   </span>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="flex flex-col items-end justify-between">

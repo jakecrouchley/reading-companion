@@ -9,4 +9,5 @@ export interface UserPreferences {
   sortDirection: SortDirection;
   filterPreference: ReadingStatus | 'all';
   lastSearchQuery: string | null;
+  recentSearches: string[];
 }

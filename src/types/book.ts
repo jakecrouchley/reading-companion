@@ -6,11 +6,10 @@ export interface Book {
   categories?: string[];
   description?: string;
   thumbnail?: string;
-  averageRating?: number;
-  ratingsCount?: number;
   publishedDate?: string;
   pageCount?: number;
   isbn?: string;
+  language?: string;
 }
 
 export type ReadingStatus = 'not_started' | 'reading' | 'read';

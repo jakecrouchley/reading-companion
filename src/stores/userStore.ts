@@ -9,6 +9,7 @@ interface UserState extends UserPreferences {
   setSortDirection: (direction: SortDirection) => void;
   setFilterPreference: (filter: ReadingStatus | 'all') => void;
   setLastSearchQuery: (query: string | null) => void;
+  addRecentSearch: (query: string) => void;
   reset: () => void;
 }
 
@@ -18,6 +19,7 @@ const initialState: UserPreferences = {
   sortDirection: 'desc',
   filterPreference: 'all',
   lastSearchQuery: null,
+  recentSearches: [],
 };
 
 export const useUserStore = create<UserState>()(
@@ -43,6 +45,16 @@ export const useUserStore = create<UserState>()(
 
       setLastSearchQuery: (lastSearchQuery) => {
         set({ lastSearchQuery });
+      },
+
+      addRecentSearch: (query) => {
+        set((state) => {
+          // Remove duplicate if exists, add to front, keep max 3
+          const filtered = state.recentSearches.filter(
+            (s) => s.toLowerCase() !== query.toLowerCase()
+          );
+          return { recentSearches: [query, ...filtered].slice(0, 3) };
+        });
       },
 
       reset: () => {

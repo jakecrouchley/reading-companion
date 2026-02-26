@@ -11,12 +11,11 @@ interface GoogleBookVolume {
     authors?: string[];
     categories?: string[];
     description?: string;
+    language?: string;
     imageLinks?: {
       thumbnail?: string;
       smallThumbnail?: string;
     };
-    averageRating?: number;
-    ratingsCount?: number;
     publishedDate?: string;
     pageCount?: number;
     industryIdentifiers?: Array<{
@@ -52,6 +51,68 @@ const COMMON_GENRES = [
   'western', 'paranormal', 'supernatural',
 ];
 
+// Calculate how well a book title matches the search query
+function getTitleMatchScore(title: string, query: string): number {
+  const normalizedTitle = title.toLowerCase().trim();
+  const normalizedQuery = query.toLowerCase().trim();
+
+  // Exact match (ignoring "the" prefix)
+  const titleWithoutThe = normalizedTitle.replace(/^the\s+/, '');
+  const queryWithoutThe = normalizedQuery.replace(/^the\s+/, '');
+  if (titleWithoutThe === queryWithoutThe || normalizedTitle === normalizedQuery) {
+    return 100;
+  }
+
+  // Title starts with the query
+  if (normalizedTitle.startsWith(normalizedQuery) || titleWithoutThe.startsWith(queryWithoutThe)) {
+    return 80;
+  }
+
+  // Query words appear in order in the title
+  const queryWords = normalizedQuery.split(/\s+/);
+  const titleWords = normalizedTitle.split(/\s+/);
+
+  // Check if all query words appear in order
+  let titleIndex = 0;
+  let matchedInOrder = true;
+  for (const queryWord of queryWords) {
+    let found = false;
+    while (titleIndex < titleWords.length) {
+      if (titleWords[titleIndex].includes(queryWord) || queryWord.includes(titleWords[titleIndex])) {
+        found = true;
+        titleIndex++;
+        break;
+      }
+      titleIndex++;
+    }
+    if (!found) {
+      matchedInOrder = false;
+      break;
+    }
+  }
+  if (matchedInOrder && queryWords.length > 1) {
+    return 60;
+  }
+
+  // All query words appear somewhere in title
+  const allWordsPresent = queryWords.every(word =>
+    titleWords.some(titleWord => titleWord.includes(word) || word.includes(titleWord))
+  );
+  if (allWordsPresent) {
+    return 40;
+  }
+
+  // Some query words appear in title
+  const matchingWords = queryWords.filter(word =>
+    titleWords.some(titleWord => titleWord.includes(word) || word.includes(titleWord))
+  );
+  if (matchingWords.length > 0) {
+    return 20 * (matchingWords.length / queryWords.length);
+  }
+
+  return 0;
+}
+
 function isLikelyGenreSearch(query: string): boolean {
   const normalizedQuery = query.toLowerCase().trim();
   return COMMON_GENRES.some(genre =>
@@ -75,11 +136,10 @@ function transformGoogleBook(volume: GoogleBookVolume): Book {
     categories: volumeInfo.categories,
     description: volumeInfo.description,
     thumbnail: volumeInfo.imageLinks?.thumbnail?.replace('http://', 'https://'),
-    averageRating: volumeInfo.averageRating,
-    ratingsCount: volumeInfo.ratingsCount,
     publishedDate: volumeInfo.publishedDate,
     pageCount: volumeInfo.pageCount,
     isbn,
+    language: volumeInfo.language,
   };
 }
 
@@ -91,6 +151,16 @@ export async function searchBooks(query: string): Promise<Book[]> {
 
     // Build search requests based on query type
     const searchPromises = [
+      // General relevance search - uses Google's built-in relevance scoring
+      axios.get(GOOGLE_BOOKS_API, {
+        params: {
+          q: query,
+          key: API_KEY,
+          maxResults: 20,
+          orderBy: 'relevance',
+        },
+      }),
+      // Title-specific search
       axios.get(GOOGLE_BOOKS_API, {
         params: {
           q: `intitle:${query}`,
@@ -98,11 +168,12 @@ export async function searchBooks(query: string): Promise<Book[]> {
           maxResults: 15,
         },
       }),
+      // Author-specific search
       axios.get(GOOGLE_BOOKS_API, {
         params: {
           q: `inauthor:${query}`,
           key: API_KEY,
-          maxResults: 15,
+          maxResults: 10,
         },
       }),
     ];
@@ -132,27 +203,30 @@ export async function searchBooks(query: string): Promise<Book[]> {
       return [];
     };
 
-    const titleBooks = getBooks(results[0]);
-    const authorBooks = getBooks(results[1]);
-    const genreBooks = isGenreSearch ? getBooks(results[2]) : [];
+    const relevanceBooks = getBooks(results[0]);
+    const titleBooks = getBooks(results[1]);
+    const authorBooks = getBooks(results[2]);
+    const genreBooks = isGenreSearch ? getBooks(results[3]) : [];
+
+    // Collect all unique books
+    const seen = new Set<string>();
+    const merged: Book[] = [];
 
     // Determine search type priority
     const queryWords = query.trim().split(/\s+/);
     const isLikelyAuthorSearch = !isGenreSearch && queryWords.length <= 3 &&
       !query.toLowerCase().match(/\b(the|a|an|of|and|in|on|at|to|for)\b/);
 
-    const seen = new Set<string>();
-    const merged: Book[] = [];
-
     // Determine priority order based on search type
     let orderedResults: Book[][];
     if (isGenreSearch) {
-      // For genre searches, prioritize subject results, then title, then author
-      orderedResults = [genreBooks, titleBooks, authorBooks];
+      // For genre searches, prioritize subject results
+      orderedResults = [genreBooks, relevanceBooks, titleBooks, authorBooks];
     } else if (isLikelyAuthorSearch) {
-      orderedResults = [authorBooks, titleBooks];
+      orderedResults = [authorBooks, relevanceBooks, titleBooks];
     } else {
-      orderedResults = [titleBooks, authorBooks];
+      // For title/general searches, prioritize relevance and title matches
+      orderedResults = [relevanceBooks, titleBooks, authorBooks];
     }
 
     // Add books in priority order
@@ -165,10 +239,21 @@ export async function searchBooks(query: string): Promise<Book[]> {
       }
     }
 
-    // Sort to prioritize books with covers and ratings
+    // Sort by title match score, then language, then thumbnail presence
     merged.sort((a, b) => {
-      const aScore = (a.thumbnail ? 2 : 0) + (a.averageRating ? 1 : 0);
-      const bScore = (b.thumbnail ? 2 : 0) + (b.averageRating ? 1 : 0);
+      const aTitleScore = getTitleMatchScore(a.title, query);
+      const bTitleScore = getTitleMatchScore(b.title, query);
+
+      // Strong title match difference takes priority
+      if (Math.abs(aTitleScore - bTitleScore) >= 20) {
+        return bTitleScore - aTitleScore;
+      }
+
+      // Then consider language and thumbnail
+      const aIsEnglish = a.language === 'en' ? 4 : 0;
+      const bIsEnglish = b.language === 'en' ? 4 : 0;
+      const aScore = aTitleScore + aIsEnglish + (a.thumbnail ? 2 : 0);
+      const bScore = bTitleScore + bIsEnglish + (b.thumbnail ? 2 : 0);
       return bScore - aScore;
     });
 
